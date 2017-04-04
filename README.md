@@ -59,6 +59,7 @@ class Read implements ApiEndpoint
         return new UserTitle();
     }
 }
+
 ```
 
 ### ApiEndpoint
