@@ -1,0 +1,38 @@
+{
+    "name": "jdt/api",
+    "description": "Simple Laravel Api Wrapper",
+    "minimum-stability": "stable",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tom Martin",
+            "email": "tom@jdtsoftware.co.uk"
+        },
+        {
+            "name": "Jon Braud",
+            "email": "jon@jdtsoftware.co.uk"
+        },
+        {
+            "name": "Dan Dunford",
+            "email": "dan@jdtsoftware.co.uk"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "JDT\\Api\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^7.0",
+        "illuminate/contracts": "^5.2",
+        "illuminate/database": "^5.2",
+        "illuminate/http": "^5.2",
+        "illuminate/support": "^5.2",
+        "illuminate/pagination": "^5.2",
+        "illuminate/routing": "^5.2",
+        "illuminate/validation": "^5.2",
+        "dingo/blueprint": "dev-master",
+        "dingo/api": "dev-master",
+        "nesbot/carbon": "^1.22"
+    }
+}
