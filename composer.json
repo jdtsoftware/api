@@ -1,5 +1,5 @@
 {
-    "name": "jdt/api",
+    "name": "jdtsoftware/api",
     "description": "Simple Laravel Api Wrapper",
     "minimum-stability": "stable",
     "license": "MIT",
