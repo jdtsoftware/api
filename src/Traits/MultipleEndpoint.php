@@ -106,7 +106,7 @@ trait MultipleEndpoint
 
                 return $response;
             } else {
-                throw new ValidationHttpException($validation->errors());
+                throw new ValidationHttpException($validation);
             }
         });
     }
