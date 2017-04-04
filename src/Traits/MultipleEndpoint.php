@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
-use JDT\Api\Contracts\ApiEndpoint;
-use JDT\Api\Contracts\ModifyPayload;
-use JDT\Api\Contracts\ModifyPayloadPostValidation;
-use JDT\Api\Contracts\ModifyResponse;
-use JDT\Api\Exceptions\ValidationHttpException;
 use JDT\Api\Payload;
 use Dingo\Api\Http\Response;
 use Dingo\Api\Routing\Helpers;
+use JDT\Api\Contracts\ApiEndpoint;
 use Illuminate\Validation\Validator;
+use JDT\Api\Contracts\ModifyPayload;
+use JDT\Api\Contracts\ModifyResponse;
+use JDT\Api\Exceptions\ValidationHttpException;
+use JDT\Api\Contracts\ModifyPayloadPostValidation;
 
 trait MultipleEndpoint
 {
@@ -37,7 +37,7 @@ trait MultipleEndpoint
     }
 
     /**
-     * Get the bulk identifier key
+     * Get the bulk identifier key.
      * @return string
      */
     public function getBulkIdentifier():string
@@ -67,13 +67,13 @@ trait MultipleEndpoint
     }
 
     /**
-     * Execute the api endpoint
+     * Execute the api endpoint.
      * @param \JDT\Api\Payload $payload
      * @return \Dingo\Api\Http\Response
      */
     public function execute(Payload $payload):Response
     {
-        \DB::transaction(function() use ($payload) {
+        \DB::transaction(function () use ($payload) {
             if ($this instanceof ModifyPayload) {
                 $payload = $this->modifyPayload($payload);
             }
@@ -116,7 +116,7 @@ trait MultipleEndpoint
      */
     protected function buildApiList():array
     {
-        return tap($this->builtApiList, function(&$value) {
+        return tap($this->builtApiList, function (&$value) {
             if ($value === null) {
                 $builtApiList = [];
 

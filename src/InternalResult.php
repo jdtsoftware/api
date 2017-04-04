@@ -2,8 +2,8 @@
 
 namespace JDT\Api;
 
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class InternalResult
 {

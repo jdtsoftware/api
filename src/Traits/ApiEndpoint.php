@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
-use JDT\Api\Contracts\ModifyPayload;
-use JDT\Api\Contracts\ModifyPayloadPostValidation;
-use JDT\Api\Contracts\ModifyResponse;
-use JDT\Api\Exceptions\ValidationHttpException;
-use JDT\Api\Field\FieldList;
 use JDT\Api\Payload;
-use Dingo\Api\Routing\Helpers;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Validator;
 use Dingo\Api\Http\Response;
+use JDT\Api\Field\FieldList;
+use Dingo\Api\Routing\Helpers;
+use Illuminate\Validation\Validator;
+use JDT\Api\Contracts\ModifyPayload;
+use JDT\Api\Contracts\ModifyResponse;
+use Illuminate\Database\Eloquent\Builder;
+use JDT\Api\Exceptions\ValidationHttpException;
+use JDT\Api\Contracts\ModifyPayloadPostValidation;
 
 trait ApiEndpoint
 {
@@ -46,20 +46,20 @@ trait ApiEndpoint
     protected $bulkLimit = 100;
 
     /**
-     * Get the available fields
+     * Get the available fields.
      * @param \JDT\Api\Payload $payload
      * @return \JDT\Api\Field\FieldList
      */
     abstract protected function getFields(Payload $payload):FieldList;
 
     /**
-     * Run the endpoint code
+     * Run the endpoint code.
      * @return \Dingo\Api\Http\Response
      */
     abstract protected function run():Response;
 
     /**
-     * Get the bulk identifier key
+     * Get the bulk identifier key.
      * @return string|null
      */
     public function getBulkIdentifier():string
@@ -68,7 +68,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Execute the api endpoint
+     * Execute the api endpoint.
      * @param \JDT\Api\Payload $payload
      * @return \Dingo\Api\Http\Response
      */
@@ -117,13 +117,13 @@ trait ApiEndpoint
 
         if ($this->getBuiltFieldList($payload)->hasSort()) {
             $sortKeys = $this->getBuiltFieldList($payload)->getSortKeys();
-            array_walk($sortKeys, function(&$field) {
+            array_walk($sortKeys, function (&$field) {
                 $field = preg_quote($field);
             });
 
             $rules = array_merge($rules, [
                 'sort' => [
-                    'regex:#^(-?(?:' . implode('|', $sortKeys) . '),?)+$#'
+                    'regex:#^(-?(?:' . implode('|', $sortKeys) . '),?)+$#',
                 ],
             ]);
         }
@@ -132,7 +132,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Execute the single api endpoint
+     * Execute the single api endpoint.
      * @param \JDT\Api\Payload $payload
      * @return \Dingo\Api\Http\Response
      */
@@ -166,7 +166,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Execute the bulk api endpoint
+     * Execute the bulk api endpoint.
      * @param \JDT\Api\Payload $payload
      * @return \Dingo\Api\Http\Response
      */
@@ -208,7 +208,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Get the payload
+     * Get the payload.
      * @return \JDT\Api\Payload
      */
     protected function getPayload():Payload
@@ -217,7 +217,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Modify the payload if needed before execution
+     * Modify the payload if needed before execution.
      * @param \JDT\Api\Payload $payload
      * @return \JDT\Api\Payload
      */
@@ -227,7 +227,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Get the default page size
+     * Get the default page size.
      * @return int
      */
     protected function getDefaultPageSize():int
@@ -236,7 +236,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Get the built field list
+     * Get the built field list.
      * @param \JDT\Api\Payload $payload
      * @return \JDT\Api\Field\FieldList
      */
@@ -261,7 +261,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Build the where clause based upon the payload
+     * Build the where clause based upon the payload.
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
@@ -330,7 +330,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Build the order by based upon the payload
+     * Build the order by based upon the payload.
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
@@ -355,7 +355,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Build the include for loading relationships defined in a model
+     * Build the include for loading relationships defined in a model.
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
@@ -371,7 +371,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Build the offset and limit based upon the payload
+     * Build the offset and limit based upon the payload.
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
      */

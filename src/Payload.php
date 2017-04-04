@@ -7,8 +7,7 @@ namespace JDT\Api;
 use Illuminate\Support\Arr;
 
 /**
- * Class Payload
- * @package JDT\Api
+ * Class Payload.
  */
 class Payload
 {
@@ -23,7 +22,7 @@ class Payload
     }
 
     /**
-     * Get payload
+     * Get payload.
      * @return array
      */
     public function getPayload():array
@@ -32,18 +31,19 @@ class Payload
     }
 
     /**
-     * Remove all unwanted columns from payload
+     * Remove all unwanted columns from payload.
      * @param array $keys
      * @return \JDT\Api\Payload
      */
     public function only(array $keys):self
     {
         $this->payload = Arr::only($this->payload, $keys);
+
         return $this;
     }
 
     /**
-     * Return a new payload with the given keys
+     * Return a new payload with the given keys.
      * @param string $key
      * @return \JDT\Api\Payload
      */
@@ -53,7 +53,7 @@ class Payload
     }
 
     /**
-     * Has the payload got the correct key
+     * Has the payload got the correct key.
      * @param string $key
      * @return bool
      */
@@ -63,7 +63,7 @@ class Payload
     }
 
     /**
-     * Get the data from the payload
+     * Get the data from the payload.
      * @param string $key
      * @param mixed $default
      * @return mixed
@@ -81,6 +81,7 @@ class Payload
     public function set(string $key, $value):self
     {
         Arr::set($this->payload, $key, $value);
+
         return $this;
     }
 }

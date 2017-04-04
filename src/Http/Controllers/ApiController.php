@@ -2,11 +2,11 @@
 
 namespace JDT\Api\Http\Controllers;
 
+use JDT\Api\Payload;
 use Dingo\Api\Http\Response;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
 use JDT\Api\Contracts\ApiEndpoint;
-use JDT\Api\Payload;
+use Illuminate\Routing\Controller as BaseController;
 
 class ApiController extends BaseController
 {

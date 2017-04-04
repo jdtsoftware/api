@@ -4,26 +4,26 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
-use JDT\Api\Contracts\TransformerAwareModel;
-use JDT\Api\Contracts\ApiEndpoint;
 use JDT\Api\Payload;
+use Dingo\Api\Http\Response;
+use JDT\Api\Contracts\ApiEndpoint;
+use Illuminate\Database\Eloquent\Model;
+use JDT\Api\Contracts\TransformerAwareModel;
 use JDT\Api\Transformers\AbstractTransformer;
 use JDT\Api\Transformers\DefaultModelTransformer;
-use Dingo\Api\Http\Response;
-use Illuminate\Database\Eloquent\Model;
 
 trait ModelEndpoint
 {
     use \JDT\Api\Traits\ApiEndpoint;
 
     /**
-     * Get the model you want to query against
+     * Get the model you want to query against.
      * @return \Illuminate\Database\Eloquent\Model
      */
     abstract protected function getModel():Model;
 
     /**
-     * If this function returns false the action will not be triggered
+     * If this function returns false the action will not be triggered.
      * @param \Illuminate\Database\Eloquent\Model $model
      * @return bool
      */
@@ -33,7 +33,7 @@ trait ModelEndpoint
     }
 
     /**
-     * Triggered once the action has been complete
+     * Triggered once the action has been complete.
      * @param \Illuminate\Database\Eloquent\Model $model
      * @return \Illuminate\Database\Eloquent\Model
      */
@@ -43,7 +43,7 @@ trait ModelEndpoint
     }
 
     /**
-     * Return the key name to find on
+     * Return the key name to find on.
      * @return string
      */
     protected function getKeyName():string
@@ -52,7 +52,7 @@ trait ModelEndpoint
     }
 
     /**
-     * Run the endpoint code
+     * Run the endpoint code.
      * @return \Dingo\Api\Http\Response
      */
     protected function run():Response
@@ -94,7 +94,7 @@ trait ModelEndpoint
     }
 
     /**
-     * Check the identifier exists and is present inside the payload
+     * Check the identifier exists and is present inside the payload.
      * @param \Illuminate\Database\Eloquent\Model $model
      * @throws \Exception
      */
@@ -126,7 +126,7 @@ trait ModelEndpoint
             ->appends([
                 'filter' => $payload->get('filter'),
                 'page' => [
-                    'size' => $payload->get('page.size')
+                    'size' => $payload->get('page.size'),
                 ],
                 'sort' => $payload->get('sort'),
                 'fields' => $payload->get('fields'),

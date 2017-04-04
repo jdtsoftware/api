@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace JDT\Api\Field;
 
 /**
- * Class Field
- * @package JDT\Api\Field
+ * Class Field.
  */
 class Field
 {
@@ -30,8 +29,7 @@ class Field
         bool $filter = false,
         bool $sort = false,
         string $filterValueValidation = ''
-    )
-    {
+    ) {
         $this->field = $field;
         $this->payloadValidation = $payloadValidation;
         $this->filter = $filter;
@@ -56,7 +54,7 @@ class Field
     }
 
     /**
-     * @return boolean
+     * @return bool
      */
     public function canFilter():bool
     {
@@ -72,7 +70,7 @@ class Field
     }
 
     /**
-     * @return boolean
+     * @return bool
      */
     public function canSort():bool
     {
