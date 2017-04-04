@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace JDT\Api\Field;
 
 /**
- * Class FieldList
- * @package JDT\Api\Field
+ * Class FieldList.
  */
 class FieldList
 {
@@ -16,7 +15,7 @@ class FieldList
     protected $filters = [];
 
     /**
-     * Add a field to the list
+     * Add a field to the list.
      * @param \JDT\Api\Field\Field $field
      * @return \JDT\Api\Field\FieldList
      */
@@ -44,7 +43,7 @@ class FieldList
     }
 
     /**
-     * Has fields
+     * Has fields.
      * @return bool
      */
     public function hasFields():bool
@@ -53,7 +52,7 @@ class FieldList
     }
 
     /**
-     * Has payload validation
+     * Has payload validation.
      * @return bool
      */
     public function hasPayloadValidations():bool
@@ -62,7 +61,7 @@ class FieldList
     }
 
     /**
-     * Has filters
+     * Has filters.
      * @return bool
      */
     public function hasFilters():bool
@@ -71,7 +70,7 @@ class FieldList
     }
 
     /**
-     * Has Sort
+     * Has Sort.
      * @return bool
      */
     public function hasSort():bool
@@ -80,7 +79,7 @@ class FieldList
     }
 
     /**
-     * Get fields
+     * Get fields.
      * @return \JDT\Api\Field\Field[]
      */
     public function getFields():array
@@ -89,7 +88,7 @@ class FieldList
     }
 
     /**
-     * Get payload validation
+     * Get payload validation.
      * @return array
      */
     public function getPayloadValidations():array
@@ -98,7 +97,7 @@ class FieldList
     }
 
     /**
-     * Get filters
+     * Get filters.
      * @return array
      */
     public function getFilters():array
@@ -107,7 +106,7 @@ class FieldList
     }
 
     /**
-     * Get Sort
+     * Get Sort.
      * @return array
      */
     public function getSort():array
@@ -116,7 +115,7 @@ class FieldList
     }
 
     /**
-     * Get field keys
+     * Get field keys.
      * @return array
      */
     public function getFieldKeys():array
@@ -125,7 +124,7 @@ class FieldList
     }
 
     /**
-     * Get payload validation keys
+     * Get payload validation keys.
      * @return array
      */
     public function getPayloadValidationKeys():array
@@ -134,7 +133,7 @@ class FieldList
     }
 
     /**
-     * Get filter keys
+     * Get filter keys.
      * @return array
      */
     public function getFilterKeys():array
@@ -143,7 +142,7 @@ class FieldList
     }
 
     /**
-     * Get Sort keys
+     * Get Sort keys.
      * @return array
      */
     public function getSortKeys():array

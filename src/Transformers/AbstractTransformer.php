@@ -6,8 +6,7 @@ use Carbon\Carbon;
 use League\Fractal\TransformerAbstract;
 
 /**
- * Class AbstractTransformer
- * @package App\Transformers
+ * Class AbstractTransformer.
  */
 abstract class AbstractTransformer extends TransformerAbstract
 {
@@ -19,7 +18,7 @@ abstract class AbstractTransformer extends TransformerAbstract
      */
     public function transform($data):array
     {
-        if($data === null) {
+        if ($data === null) {
             return [];
         }
 

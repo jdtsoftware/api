@@ -18,7 +18,7 @@ interface ApiEndpoint
     const INCLUDE_DELETED = false;
 
     /**
-     * Get the bulk identifier key
+     * Get the bulk identifier key.
      * @return string
      */
     public function getBulkIdentifier():string;
@@ -30,7 +30,7 @@ interface ApiEndpoint
     public function buildRules(Payload $payload):array;
 
     /**
-     * Execute the api endpoint
+     * Execute the api endpoint.
      * @param \JDT\Api\Payload $payload
      * @return \Dingo\Api\Http\Response
      */
