@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
-use Illuminate\Database\Eloquent\Model;
-use JDT\Api\Contracts\TransformerAwareModel;
 use JDT\Api\Payload;
 use Dingo\Api\Http\Response;
 use Dingo\Api\Routing\Helpers;
@@ -13,10 +11,12 @@ use JDT\Api\Contracts\ApiEndpoint;
 use Illuminate\Validation\Validator;
 use JDT\Api\Contracts\ModifyPayload;
 use JDT\Api\Contracts\ModifyResponse;
-use JDT\Api\Exceptions\ValidationHttpException;
-use JDT\Api\Contracts\ModifyPayloadPostValidation;
+use Illuminate\Database\Eloquent\Model;
+use JDT\Api\Contracts\TransformerAwareModel;
 use JDT\Api\Transformers\AbstractTransformer;
+use JDT\Api\Exceptions\ValidationHttpException;
 use JDT\Api\Transformers\DefaultModelTransformer;
+use JDT\Api\Contracts\ModifyPayloadPostValidation;
 
 trait MultipleEndpoint
 {
