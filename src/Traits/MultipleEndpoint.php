@@ -11,7 +11,11 @@ use JDT\Api\Contracts\ApiEndpoint;
 use Illuminate\Validation\Validator;
 use JDT\Api\Contracts\ModifyPayload;
 use JDT\Api\Contracts\ModifyResponse;
+use Illuminate\Database\Eloquent\Model;
+use JDT\Api\Contracts\TransformerAwareModel;
+use JDT\Api\Transformers\AbstractTransformer;
 use JDT\Api\Exceptions\ValidationHttpException;
+use JDT\Api\Transformers\DefaultModelTransformer;
 use JDT\Api\Contracts\ModifyPayloadPostValidation;
 
 trait MultipleEndpoint
@@ -21,17 +25,22 @@ trait MultipleEndpoint
     protected $apiList = [];
     protected $builtApiList;
     protected $callbackList = [];
+    protected $excludeValidationRulesList = [];
 
     /**
      * @param string $identifier
      * @param string $endpointClass
      * @param callable $callback
+     * @param array $excludeValidationRules
      * @return \JDT\Api\Traits\MultipleEndpoint
      */
-    public function addApi(string $identifier, string $endpointClass, callable $callback):self
+    public function addApi(string $identifier, string $endpointClass, callable $callback = null, array $excludeValidationRules = []):self
     {
         $this->apiList[$identifier] = $endpointClass;
-        $this->callbackList[$identifier] = $callback;
+        if ($callback !== null) {
+            $this->callbackList[$identifier] = $callback;
+        }
+        $this->excludeValidationRulesList[$identifier] = $excludeValidationRules;
 
         return $this;
     }
@@ -53,12 +62,19 @@ trait MultipleEndpoint
     {
         $rules = [];
 
-        foreach ($this->builtApiList() as $key => $api) {
+        foreach ($this->buildApiList() as $key => $api) {
             $internalPayload = $payload->pluck($key);
             $internalRules = $api->buildRules($internalPayload);
 
             $rules[$key] = 'array';
             foreach ($internalRules as $internalKey => $internalValue) {
+                if (
+                    !empty($this->excludeValidationRulesList[$key]) &&
+                    in_array($internalKey, $this->excludeValidationRulesList[$key])
+                ) {
+                    continue;
+                }
+
                 $rules[$key . '.' . $internalKey] = $internalValue;
             }
         }
@@ -73,7 +89,7 @@ trait MultipleEndpoint
      */
     public function execute(Payload $payload):Response
     {
-        \DB::transaction(function () use ($payload) {
+        return \DB::transaction(function () use ($payload) {
             if ($this instanceof ModifyPayload) {
                 $payload = $this->modifyPayload($payload);
             }
@@ -89,13 +105,14 @@ trait MultipleEndpoint
                 foreach ($this->buildApiList() as $key => $api) {
                     $internalPayload = $payload->pluck($key);
                     $result = $api->execute($internalPayload);
+                    $originalContent = $result->getOriginalContent();
 
                     if (isset($this->callbackList[$key])) {
                         $callback = $this->callbackList[$key];
-                        $callback($result, $payload);
+                        $callback($originalContent, $payload);
                     }
 
-                    $return[$key] = $result->getOriginalContent();
+                    $return[$key] = $this->transform($api, $originalContent);
                 }
 
                 $response = $this->response()->array(['data' => $return]);
@@ -112,6 +129,26 @@ trait MultipleEndpoint
     }
 
     /**
+     * @param \JDT\Api\Contracts\ApiEndpoint $api
+     * @param mixed $originalContent
+     * @return array
+     */
+    protected function transform(ApiEndpoint $api, $originalContent):array
+    {
+        if ($api instanceof AbstractTransformer) {
+            return $api->transform($originalContent);
+        } elseif (is_object($originalContent) && $originalContent instanceof Model) {
+            if ($originalContent instanceof TransformerAwareModel) {
+                return $originalContent->getTransformer()->transform($originalContent);
+            } else {
+                return (new DefaultModelTransformer())->transform($originalContent);
+            }
+        } else {
+            return (array) $originalContent;
+        }
+    }
+
+    /**
      * @return \JDT\Api\Contracts\ApiEndpoint[]
      */
     protected function buildApiList():array
@@ -121,11 +158,13 @@ trait MultipleEndpoint
                 $builtApiList = [];
 
                 foreach ($this->apiList as $key => $apiClass) {
-                    if (is_a($apiClass, ApiEndpoint::class) === false) {
-                        throw new \Exception('The defined service must be an instance of "App\Services\Api\Contracts\ApiEndpoint"');
+                    $class = app($apiClass);
+
+                    if (!($class instanceof ApiEndpoint)) {
+                        throw new \Exception($apiClass . ' must be an instance of ' . ApiEndpoint::class);
                     }
 
-                    $builtApiList[$key] = app($apiClass);
+                    $builtApiList[$key] = $class;
                 }
 
                 $this->builtApiList = $value = $builtApiList;

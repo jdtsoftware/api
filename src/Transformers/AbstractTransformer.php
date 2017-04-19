@@ -11,6 +11,15 @@ use League\Fractal\TransformerAbstract;
 abstract class AbstractTransformer extends TransformerAbstract
 {
     protected $links = [];
+    protected static $transformDate;
+
+    /**
+     * @param callable $transformDate
+     */
+    public static function setTransformDate(callable $transformDate)
+    {
+        self::$transformDate = $transformDate;
+    }
 
     /**
      * @param $data
@@ -37,6 +46,12 @@ abstract class AbstractTransformer extends TransformerAbstract
      */
     protected function transformDate(Carbon $date):array
     {
-        return $date->toRfc3339String();
+        if (self::$transformDate !== null) {
+            return call_user_func(self::$transformDate, $date);
+        }
+
+        return [
+            'utc' => $date->toRfc3339String(),
+        ];
     }
 }
