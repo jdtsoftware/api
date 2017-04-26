@@ -223,6 +223,12 @@ class InternalRequest
 
         $this->reset();
 
-        return new InternalResult(json_decode($result->getContent(), true), $result->getOriginalContent());
+        if ($result->getContent() === null) {
+            $content = [];
+        } else {
+            $content = json_decode($result->getContent(), true);
+        }
+
+        return new InternalResult($content, $result->getOriginalContent(), $result->getStatusCode());
     }
 }

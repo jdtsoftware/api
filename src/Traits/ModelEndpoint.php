@@ -154,7 +154,7 @@ trait ModelEndpoint
                 $model->withTrashed();
             }
 
-            return $model = $model->where($this->getKeyName(), '=', $payload->get($this->getKeyName()))->first();
+            return $model->where($this->getKeyName(), '=', $payload->get($this->getKeyName()))->first();
         }, true);
     }
 
@@ -185,7 +185,9 @@ trait ModelEndpoint
             $payload = $payload->only($this->getBuiltFieldList($payload)->getPayloadValidationKeys());
             $model = $model->where($this->getKeyName(), '=', $payload->get($this->getKeyName()))->first();
 
-            $model->update($payload->getPayload());
+            if ($model !== null) {
+                $model->update($payload->getPayload());
+            }
 
             return $model;
         }, true);
@@ -201,7 +203,9 @@ trait ModelEndpoint
         $this->actionRequest($model, function (Model $model, Payload $payload) {
             $model = $model->where($this->getKeyName(), '=', $payload->get($this->getKeyName()))->first();
 
-            $model->delete();
+            if ($model !== null) {
+                $model->delete();
+            }
 
             return $model;
         }, true);
@@ -229,9 +233,13 @@ trait ModelEndpoint
 
         if ($this->preEventAction($model) === true) {
             $model = $callable($model, $this->getPayload());
-            $model = $this->postEventAction($model);
 
-            return $this->response()->item($model, $this->getTransformer());
+            if ($model !== null) {
+                $model = $this->postEventAction($model);
+                return $this->response()->item($model, $this->getTransformer());
+            } else {
+                return $this->response()->noContent();
+            }
         }
 
         return $this->response()->errorBadRequest();

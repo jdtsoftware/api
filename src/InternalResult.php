@@ -10,13 +10,15 @@ class InternalResult
     protected $data;
     protected $meta;
     protected $original;
+    protected $statusCode;
 
     /**
      * InternalResult constructor.
      * @param array $result
      * @param mixed $original
+     * @param int $statusCode
      */
-    public function __construct(array $result, $original)
+    public function __construct(array $result, $original, int $statusCode = 200)
     {
         if (isset($result['meta'])) {
             $this->meta = collect($result['meta']);
@@ -24,9 +26,12 @@ class InternalResult
 
         if (isset($result['data'])) {
             $this->data = collect($result['data']);
+        } else {
+            $this->data = collect();
         }
 
         $this->original = $original;
+        $this->statusCode = $statusCode;
     }
 
     /**
@@ -34,7 +39,7 @@ class InternalResult
      */
     public function hasData():bool
     {
-        return $this->data !== null;
+        return $this->data->isNotEmpty();
     }
 
     /**
@@ -89,5 +94,13 @@ class InternalResult
         }
 
         return null;
+    }
+
+    /**
+     * @return int
+     */
+    public function getStatusCode():int
+    {
+        return $this->statusCode;
     }
 }
