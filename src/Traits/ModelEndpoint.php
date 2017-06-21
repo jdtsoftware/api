@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
-use Illuminate\Database\Eloquent\Builde;
+use Illuminate\Database\Eloquent\Builder;
 use JDT\Api\Payload;
 use Dingo\Api\Http\Response;
 use JDT\Api\Contracts\ApiEndpoint;
