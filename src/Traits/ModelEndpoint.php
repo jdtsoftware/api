@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
+use Illuminate\Database\Eloquent\Builde;
 use JDT\Api\Payload;
 use Dingo\Api\Http\Response;
 use JDT\Api\Contracts\ApiEndpoint;
@@ -40,6 +41,17 @@ trait ModelEndpoint
     public function postEventAction(Model $model):Model
     {
         return $model;
+    }
+
+    /**
+     * Triggered before returning the model data set
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function modifyQuery(Builder $query): Builder
+    {
+        return $query;
     }
 
     /**
@@ -118,6 +130,7 @@ trait ModelEndpoint
         // Including is now handled by the correct collection
         $this->buildWhere($query);
         $this->buildSort($query);
+        $this->modifyQuery($query);
 
         $page = $payload->get('page.number', 1);
         $size = $payload->get('page.size', $this->getDefaultPageSize());
