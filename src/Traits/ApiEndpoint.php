@@ -4,385 +4,257 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
+use Illuminate\Database\Eloquent\Builde;
 use JDT\Api\Payload;
-use Illuminate\Support\Str;
 use Dingo\Api\Http\Response;
-use JDT\Api\Field\FieldList;
-use Dingo\Api\Routing\Helpers;
-use Illuminate\Validation\Validator;
-use JDT\Api\Contracts\ModifyPayload;
-use JDT\Api\Contracts\ModifyResponse;
-use Illuminate\Database\Eloquent\Builder;
-use JDT\Api\Exceptions\ValidationHttpException;
-use JDT\Api\Contracts\ModifyPayloadPostValidation;
+use JDT\Api\Contracts\ApiEndpoint;
+use Illuminate\Database\Eloquent\Model;
+use JDT\Api\Contracts\TransformerAwareModel;
+use JDT\Api\Transformers\AbstractTransformer;
+use JDT\Api\Transformers\DefaultModelTransformer;
 
-trait ApiEndpoint
+trait ModelEndpoint
 {
-    use Helpers;
+    use \JDT\Api\Traits\ApiEndpoint;
 
     /**
-     * @var \JDT\Api\Payload
+     * Get the model you want to query against.
+     * @return \Illuminate\Database\Eloquent\Model
      */
-    private $payload;
+    abstract protected function getModel():Model;
 
     /**
-     * @var array|null
+     * If this function returns false the action will not be triggered.
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @return bool
      */
-    protected $fields;
+    public function preEventAction(Model $model):bool
+    {
+        return true;
+    }
 
     /**
-     * @var array
+     * Triggered once the action has been complete.
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @return \Illuminate\Database\Eloquent\Model
      */
-    protected $commonFields = ['fields', 'filter', 'sort', 'page', 'include'];
+    public function postEventAction(Model $model):Model
+    {
+        return $model;
+    }
 
     /**
-     * @var int
+     * Triggered before returning the model data set
+     *
+     * @param Builder $query
+     * @return Builder
      */
-    protected $defaultPageSize = 25;
+    public function modifyQuery(Builder $query): Builder
+    {
+        return $query;
+    }
 
     /**
-     * @var int
+     * Return the key name to find on.
+     * @return string
      */
-    protected $bulkLimit = 100;
-
-    /**
-     * Get the available fields.
-     * @param \JDT\Api\Payload $payload
-     * @return \JDT\Api\Field\FieldList
-     */
-    abstract protected function getFields(Payload $payload):FieldList;
+    protected function getKeyName():string
+    {
+        return $this->getModel()->getKeyName();
+    }
 
     /**
      * Run the endpoint code.
      * @return \Dingo\Api\Http\Response
      */
-    abstract protected function run():Response;
-
-    /**
-     * Get the bulk identifier key.
-     * @return string|null
-     */
-    public function getBulkIdentifier():string
+    protected function run():Response
     {
-        return '';
+        switch ($this->getRunType()) {
+            case ApiEndpoint::TYPE_READ_ALL:
+                return $this->modelReadAll();
+
+            case ApiEndpoint::TYPE_CREATE:
+                return $this->modelCreate();
+
+            case ApiEndpoint::TYPE_READ:
+                return $this->modelRead();
+
+            case ApiEndpoint::TYPE_UPDATE:
+                return $this->modelUpdate();
+
+            case ApiEndpoint::TYPE_DELETE:
+                return $this->modelDelete();
+        }
+
+        return $this->response()->noContent();
     }
 
     /**
-     * Execute the api endpoint.
-     * @param \JDT\Api\Payload $payload
-     * @return \Dingo\Api\Http\Response
+     * @return \JDT\Api\Transformers\AbstractTransformer
      */
-    public function execute(Payload $payload):Response
+    protected function getTransformer():AbstractTransformer
     {
-        if (
-            !empty($this->getBulkIdentifier()) &&
-            $payload->has($this->getBulkIdentifier()) &&
-            is_array($payload->get($this->getBulkIdentifier()))
-        ) {
-            return $this->executeBulk($payload);
+        $model = $this->getModel();
+
+        if ($this instanceof AbstractTransformer) {
+            return $this;
+        } elseif ($model instanceof TransformerAwareModel) {
+            return $model->getTransformer();
         } else {
-            return $this->executeSingle($payload);
+            return new DefaultModelTransformer();
         }
     }
 
     /**
-     * @param \JDT\Api\Payload $payload
-     * @return array
+     * Check the identifier exists and is present inside the payload.
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @throws \Exception
      */
-    public function buildRules(Payload $payload):array
+    protected function checkIdentifierAndPayload(Model $model)
     {
-        $rules = [];
-
-        if ($this->getBuiltFieldList($payload)->hasPayloadValidations()) {
-            $rules = array_merge($rules, $this->getBuiltFieldList($payload)->getPayloadValidations());
+        if ($this->getPayload()->has($this->getKeyName()) === false) {
+            throw new \Exception('You must provide a model identifier that exists inside the field list.');
         }
-
-        $rules = array_merge($rules, [
-            'fields.*' => 'in:' . implode(',', $this->getBuiltFieldList($payload)->getFieldKeys()),
-            'page' => 'array',
-            'page.number' => 'numeric|min:1',
-            'page.size' => 'numeric|min:1|max:100',
-        ]);
-
-        if ($this->getBuiltFieldList($payload)->hasFilters()) {
-            $rules = array_merge($rules, [
-                'filter.*.field' => 'required|in:' . implode(',', $this->getBuiltFieldList($payload)->getFilterKeys()),
-                'filter.*.type' => 'in:eq,neq,lt,lte,gt,gte,like,between,not_between,is_null,is_not_null,in,not_in',
-                'filter.*.value' => 'required_unless:filter.*.type,in,not_in,is_null,is_not_null',
-                'filter.*.values' => 'required_if:filter.*.type,in,not_in|array',
-                'filter.*.from' => 'required_if:filter.*.type,between,not_between',
-                'filter.*.to' => 'required_if:filter.*.type,between,not_between',
-            ]);
-        }
-
-        if ($this->getBuiltFieldList($payload)->hasSort()) {
-            $sortKeys = $this->getBuiltFieldList($payload)->getSortKeys();
-            array_walk($sortKeys, function (&$field) {
-                $field = preg_quote($field);
-            });
-
-            $rules = array_merge($rules, [
-                'sort' => [
-                    'regex:#^(-?(?:' . implode('|', $sortKeys) . '),?)+$#',
-                ],
-            ]);
-        }
-
-        return $rules;
     }
 
     /**
-     * Execute the single api endpoint.
-     * @param \JDT\Api\Payload $payload
      * @return \Dingo\Api\Http\Response
      */
-    protected function executeSingle(Payload $payload):Response
+    protected function modelReadAll():Response
     {
-        $fieldKeys = array_merge($this->getBuiltFieldList($payload)->getFieldKeys(), $this->commonFields);
+        $model = $this->getModel();
+        $payload = $this->getPayload();
 
-        if ($this instanceof ModifyPayload) {
-            $payload = $this->modifyPayload($payload);
-        }
+        $query = $model->newQuery();
 
-        $validation = $this->getValidation($payload);
+        // Including is now handled by the correct collection
+        $this->buildWhere($query);
+        $this->buildSort($query);
+        $this->modifyQuery($query);
 
-        if ($validation->passes()) {
-            if ($this instanceof ModifyPayloadPostValidation) {
-                $payload = $this->modifyPayloadPostValidation($payload);
-            }
+        $page = $payload->get('page.number', 1);
+        $size = $payload->get('page.size', $this->getDefaultPageSize());
 
-            $this->payload = $payload->only($fieldKeys);
-
-            $response = $this->run();
-
-            if ($this instanceof ModifyResponse) {
-                $this->modifyResponse($response);
-            }
-
-            return $response;
+        if (defined('static::PAGINATION') && static::PAGINATION === false) {
+            return $this->response()->collection($query->get(), $this->getTransformer());
         } else {
-            throw new ValidationHttpException($validation);
+            $page = $payload->get('page.number', 1);
+            $size = $payload->get('page.size', $this->getDefaultPageSize());
+
+            $result = $query->paginate($size, $payload->get('fields', ['*']), 'page[number]', $page)
+                ->appends([
+                    'filter' => $payload->get('filter'),
+                    'page' => [
+                        'size' => $payload->get('page.size'),
+                    ],
+                    'sort' => $payload->get('sort'),
+                    'fields' => $payload->get('fields'),
+                ]);
+
+            return $this->response()->paginator($result, $this->getTransformer());
         }
     }
 
     /**
-     * Execute the bulk api endpoint.
-     * @param \JDT\Api\Payload $payload
      * @return \Dingo\Api\Http\Response
      */
-    protected function executeBulk(Payload $payload):Response
+    protected function modelRead():Response
     {
-        $bulk = $payload->get($this->getBulkIdentifier());
-        $bulkCount = count($bulk);
+        $model = $this->getModel();
 
-        if ($bulkCount > $this->bulkLimit) {
-            return $this->response()->errorBadRequest('You can only process ' . $this->bulkLimit . ' at a time. Given ' . $bulkCount);
-        }
-
-        $return = [];
-        foreach ($bulk as $key => $data) {
-            $bulkPayload = $payload->pluck($this->getBulkIdentifier() . '.' . $key);
-
-            try {
-                $response = $this->executeSingle($bulkPayload)->getOriginalContent();
-            } catch (\Exception $ex) {
-                $response = app('Dingo\Api\Exception\Handler')->handle($ex)->getOriginalContent()['data'];
+        return $this->actionRequest($model, function (Model $model, Payload $payload) {
+            if (defined('static::INCLUDE_DELETED') && static::INCLUDE_DELETED === true) {
+                $model->withTrashed();
             }
 
-            $return[$key] = $response;
+            return $model->where($this->getKeyName(), '=', $payload->get($this->getKeyName()))->first();
+        }, true);
+    }
+
+    /**
+     * @return \Dingo\Api\Http\Response
+     */
+    protected function modelCreate():Response
+    {
+        $model = $this->getModel();
+
+        return $this->actionRequest($model, function (Model $model, Payload $payload) {
+            $payload = $payload->only($this->getBuiltFieldList($payload)->getPayloadValidationKeys());
+
+            $model->fill($payload->getPayload())->save();
+
+            return $model;
+        });
+    }
+
+    /**
+     * @return \Dingo\Api\Http\Response
+     */
+    protected function modelUpdate():Response
+    {
+        $model = $this->getModel();
+
+        return $this->actionRequest($model, function (Model $model, Payload $payload) {
+            $payload = $payload->only($this->getBuiltFieldList($payload)->getPayloadValidationKeys());
+            $model = $model->where($this->getKeyName(), '=', $payload->get($this->getKeyName()))->first();
+
+            if ($model !== null) {
+                $model->update($payload->getPayload());
+            }
+
+            return $model;
+        }, true);
+    }
+
+    /**
+     * @return \Dingo\Api\Http\Response
+     */
+    protected function modelDelete():Response
+    {
+        $model = $this->getModel();
+
+        $this->actionRequest($model, function (Model $model, Payload $payload) {
+            $model = $model->where($this->getKeyName(), '=', $payload->get($this->getKeyName()))->first();
+
+            if ($model !== null) {
+                $model->delete();
+            }
+
+            return $model;
+        }, true);
+
+        $result = [
+            'data' => [
+                'acknowledged' => !$model->exists,
+            ],
+        ];
+
+        return $this->response()->array($result);
+    }
+
+    /**
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param callable $callable
+     * @param bool $identifierCheck
+     * @return \Dingo\Api\Http\Response
+     */
+    protected function actionRequest(Model &$model, callable $callable, bool $identifierCheck = false):Response
+    {
+        if ($identifierCheck === true) {
+            $this->checkIdentifierAndPayload($model);
         }
 
-        return $this->response()->array(['data' => $return]);
-    }
+        if ($this->preEventAction($model) === true) {
+            $model = $callable($model, $this->getPayload());
 
-    /**
-     * @return string
-     */
-    protected function getRunType():string
-    {
-        if (defined('static::RUN_TYPE')) {
-            return static::RUN_TYPE;
-        }
-
-        return \JDT\Api\Contracts\ApiEndpoint::TYPE_READ_ALL;
-    }
-
-    /**
-     * Get the payload.
-     * @return \JDT\Api\Payload
-     */
-    protected function getPayload():Payload
-    {
-        return $this->payload;
-    }
-
-    /**
-     * Modify the payload if needed before execution.
-     * @param \JDT\Api\Payload $payload
-     * @return \JDT\Api\Payload
-     */
-    protected function modifyPayload(Payload $payload):Payload
-    {
-        return $payload;
-    }
-
-    /**
-     * Get the default page size.
-     * @return int
-     */
-    protected function getDefaultPageSize():int
-    {
-        return $this->defaultPageSize;
-    }
-
-    /**
-     * Get the built field list.
-     * @param \JDT\Api\Payload $payload
-     * @return \JDT\Api\Field\FieldList
-     */
-    protected function getBuiltFieldList(Payload $payload):FieldList
-    {
-        if ($this->fields === null) {
-            $this->fields = $this->getFields($payload);
-        }
-
-        return $this->fields;
-    }
-
-    /**
-     * @param \JDT\Api\Payload $payload
-     * @return \Illuminate\Validation\Validator
-     */
-    protected function getValidation(Payload $payload):Validator
-    {
-        $rules = $this->buildRules($payload);
-
-        return \Validator::make($payload->getPayload(), $rules);
-    }
-
-    /**
-     * Build the where clause based upon the payload.
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    protected function buildWhere(Builder $query):Builder
-    {
-        if ($this->payload->has('filter')) {
-            foreach ($this->payload->get('filter') as $filter) {
-                switch ($filter['type']) {
-                    case 'eq':
-                        $query->where($filter['field'], '=', $filter['value']);
-                        break;
-
-                    case 'neq':
-                        $query->where($filter['field'], '<>', $filter['value']);
-                        break;
-
-                    case 'lt':
-                        $query->where($filter['field'], '<', $filter['value']);
-                        break;
-
-                    case 'lte':
-                        $query->where($filter['field'], '<=', $filter['value']);
-                        break;
-
-                    case 'gt':
-                        $query->where($filter['field'], '>', $filter['value']);
-                        break;
-
-                    case 'gte':
-                        $query->where($filter['field'], '>=', $filter['value']);
-                        break;
-
-                    case 'like':
-                        $value = Str::contains($filter['value'], '%') ? $filter['value'] : '%' . $filter['value'] . '%';
-                        $query->where($filter['field'], 'like', $value);
-                        break;
-
-                    case 'is_null':
-                        $query->whereNull($filter['field']);
-                        break;
-
-                    case 'is_not_null':
-                        $query->whereNotNull($filter['field']);
-                        break;
-
-                    case 'between':
-                        $query->whereBetween($filter['field'], [$filter['from'], $filter['to']]);
-                        break;
-
-                    case 'not_between':
-                        $query->whereNotBetween($filter['field'], [$filter['from'], $filter['to']]);
-                        break;
-
-                    case 'in':
-                        $query->whereIn($filter['field'], $filter['values']);
-                        break;
-
-                    case 'not_in':
-                        $query->whereNotIn($filter['field'], $filter['values']);
-                        break;
-                }
+            if ($model !== null) {
+                $model = $this->postEventAction($model);
+                return $this->response()->item($model, $this->getTransformer());
+            } else {
+                return $this->response()->noContent();
             }
         }
 
-        return $query;
-    }
-
-    /**
-     * Build the order by based upon the payload.
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    protected function buildSort(Builder $query):Builder
-    {
-        if ($this->payload->has('sort')) {
-            $sort = explode(',', rtrim($this->payload->get('sort'), ','));
-
-            foreach ($sort as $field) {
-                $dir = 'asc';
-
-                if (Str::startsWith($field, '-')) {
-                    $dir = 'desc';
-                    $field = ltrim($field, '-');
-                }
-
-                $query->orderBy($field, $dir);
-            }
-        }
-
-        return $query;
-    }
-
-    /**
-     * Build the include for loading relationships defined in a model.
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    protected function buildInclude(Builder $query):Builder
-    {
-        if ($this->payload->has('include')) {
-            $include = explode(',', rtrim($this->payload->get('include'), ','));
-            $query->with($include);
-        }
-
-        return $query;
-    }
-
-    /**
-     * Build the offset and limit based upon the payload.
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    protected function buildOffset(Builder $query):Builder
-    {
-        $page = $this->payload->get('page.number', 1);
-        $size = $this->payload->get('page.size', $this->defaultPageSize);
-        $offset = ($page * $size) - $size;
-
-        $query->skip($offset)->take($size);
-
-        return $query;
+        return $this->response()->errorBadRequest();
     }
 }
