@@ -15,6 +15,18 @@ class FieldList
     protected $filters = [];
 
     /**
+     * FieldList constructor.
+     *
+     * @param array $fields
+     */
+    public function __construct(array $fields = [])
+    {
+        foreach($fields as $field) {
+            $this->addField($field);
+        }
+    }
+
+    /**
      * Add a field to the list.
      * @param \JDT\Api\Field\Field $field
      * @return \JDT\Api\Field\FieldList

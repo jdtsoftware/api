@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
+use JDT\Api\Field\FieldApi;
 use JDT\Api\Payload;
 use Illuminate\Support\Str;
 use Dingo\Api\Http\Response;
@@ -87,18 +88,19 @@ trait ApiEndpoint
 
     /**
      * @param \JDT\Api\Payload $payload
+     * @param boolean $ignoreApiFields
      * @return array
      */
-    public function buildRules(Payload $payload):array
+    public function buildRules(Payload $payload, $ignoreApiFields = false):array
     {
         $rules = [];
 
-        if ($this->getBuiltFieldList($payload)->hasPayloadValidations()) {
-            $rules = array_merge($rules, $this->getBuiltFieldList($payload)->getPayloadValidations());
+        if ($this->getBuiltFieldList($payload, $ignoreApiFields)->hasPayloadValidations()) {
+            $rules = array_merge($rules, $this->getBuiltFieldList($payload, $ignoreApiFields)->getPayloadValidations());
         }
 
         $rules = array_merge($rules, [
-            'fields.*' => 'in:' . implode(',', $this->getBuiltFieldList($payload)->getFieldKeys()),
+            'fields.*' => 'in:' . implode(',', $this->getBuiltFieldList($payload, $ignoreApiFields)->getFieldKeys()),
             'page' => 'array',
             'page.number' => 'numeric|min:1',
             'page.size' => 'numeric|min:1|max:100',
@@ -106,7 +108,7 @@ trait ApiEndpoint
 
         if ($this->getBuiltFieldList($payload)->hasFilters()) {
             $rules = array_merge($rules, [
-                'filter.*.field' => 'required|in:' . implode(',', $this->getBuiltFieldList($payload)->getFilterKeys()),
+                'filter.*.field' => 'required|in:' . implode(',', $this->getBuiltFieldList($payload, $ignoreApiFields)->getFilterKeys()),
                 'filter.*.type' => 'in:eq,neq,lt,lte,gt,gte,like,between,not_between,is_null,is_not_null,in,not_in',
                 'filter.*.value' => 'required_unless:filter.*.type,in,not_in,is_null,is_not_null,between',
                 'filter.*.values' => 'required_if:filter.*.type,in,not_in|array',
@@ -161,6 +163,7 @@ trait ApiEndpoint
 
             return $response;
         } else {
+            var_dump($validation->getMessageBag());
             throw new ValidationHttpException($validation);
         }
     }
@@ -238,12 +241,26 @@ trait ApiEndpoint
     /**
      * Get the built field list.
      * @param \JDT\Api\Payload $payload
+     * @param boolean $ignoreApiFields
      * @return \JDT\Api\Field\FieldList
      */
-    protected function getBuiltFieldList(Payload $payload):FieldList
+    protected function getBuiltFieldList(Payload $payload, $ignoreApiFields = false):FieldList
     {
         if ($this->fields === null) {
             $this->fields = $this->getFields($payload);
+        }
+
+        if($ignoreApiFields) {
+            $fields = new FieldList(
+                array_filter(
+                    $this->fields->getFields(),
+                    function($field) {
+                        return ($field instanceof FieldApi) === false;
+                    }
+                )
+            );
+
+            return $fields;
         }
 
         return $this->fields;
