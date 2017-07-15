@@ -163,7 +163,6 @@ trait ApiEndpoint
 
             return $response;
         } else {
-            var_dump($validation->getMessageBag());
             throw new ValidationHttpException($validation);
         }
     }
