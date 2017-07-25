@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace JDT\Api\Contracts;
 
 use JDT\Api\Payload;
-use Dingo\Api\Http\Response;
+use Illuminate\Http\JsonResponse;
+use Spatie\Fractal\Fractal;
 
 interface ApiEndpoint
 {
@@ -30,9 +31,9 @@ interface ApiEndpoint
     public function buildRules(Payload $payload):array;
 
     /**
-     * Execute the api endpoint.
+     * Execute the api endpoint
      * @param \JDT\Api\Payload $payload
-     * @return \Dingo\Api\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function execute(Payload $payload):Response;
+    public function execute(Payload $payload):JsonResponse;
 }

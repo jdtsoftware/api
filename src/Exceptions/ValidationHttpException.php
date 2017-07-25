@@ -10,11 +10,17 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ValidationHttpException extends ValidationException implements MessageBagErrors, HttpExceptionInterface
 {
+    /**
+     * @return int
+     */
     public function getStatusCode()
     {
         return 422;
     }
 
+    /**
+     * @return array
+     */
     public function getHeaders()
     {
         return [];

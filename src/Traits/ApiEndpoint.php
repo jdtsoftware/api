@@ -4,22 +4,25 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
+use App\Modules\User\Entities\User;
+use JDT\Api\Contracts\ModifyFactory;
 use JDT\Api\Field\FieldApi;
 use JDT\Api\Payload;
 use Illuminate\Support\Str;
-use Dingo\Api\Http\Response;
+use Illuminate\Http\JsonResponse;
 use JDT\Api\Field\FieldList;
-use Dingo\Api\Routing\Helpers;
 use Illuminate\Validation\Validator;
 use JDT\Api\Contracts\ModifyPayload;
 use JDT\Api\Contracts\ModifyResponse;
 use Illuminate\Database\Eloquent\Builder;
 use JDT\Api\Exceptions\ValidationHttpException;
 use JDT\Api\Contracts\ModifyPayloadPostValidation;
+use JDT\Api\Response\Factory;
+use Spatie\Fractal\Fractal;
 
 trait ApiEndpoint
 {
-    use Helpers;
+    use Helper;
 
     /**
      * @var \JDT\Api\Payload
@@ -54,10 +57,10 @@ trait ApiEndpoint
     abstract protected function getFields(Payload $payload):FieldList;
 
     /**
-     * Run the endpoint code.
-     * @return \Dingo\Api\Http\Response
+     * Run the endpoint code
+     * @return \JDT\Api\Response\Factory
      */
-    abstract protected function run():Response;
+    abstract protected function run():Factory;
 
     /**
      * Get the bulk identifier key.
@@ -69,11 +72,11 @@ trait ApiEndpoint
     }
 
     /**
-     * Execute the api endpoint.
+     * Execute the api endpoint
      * @param \JDT\Api\Payload $payload
-     * @return \Dingo\Api\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function execute(Payload $payload):Response
+    public function execute(Payload $payload):JsonResponse
     {
         if (
             !empty($this->getBulkIdentifier()) &&
@@ -134,11 +137,12 @@ trait ApiEndpoint
     }
 
     /**
-     * Execute the single api endpoint.
+     * Execute a single endpoint
      * @param \JDT\Api\Payload $payload
-     * @return \Dingo\Api\Http\Response
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \JDT\Api\Exceptions\ValidationHttpException
      */
-    protected function executeSingle(Payload $payload):Response
+    protected function executeSingle(Payload $payload):JsonResponse
     {
         $fieldKeys = array_merge($this->getBuiltFieldList($payload)->getFieldKeys(), $this->commonFields);
 
@@ -155,7 +159,17 @@ trait ApiEndpoint
 
             $this->payload = $payload->only($fieldKeys);
 
-            $response = $this->run();
+            $factory = $this->run();
+
+            if ($this instanceof ModifyFactory) {
+                $this->modifyFactory($factory);
+            }
+
+            $response = $factory->transform(
+                $payload->get('include', ''),
+                $payload->get('exclude', ''),
+                $payload->get('fieldset', [])
+            );
 
             if ($this instanceof ModifyResponse) {
                 $this->modifyResponse($response);
@@ -168,11 +182,11 @@ trait ApiEndpoint
     }
 
     /**
-     * Execute the bulk api endpoint.
+     * Execute a bulk api endpoint
      * @param \JDT\Api\Payload $payload
-     * @return \Dingo\Api\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    protected function executeBulk(Payload $payload):Response
+    protected function executeBulk(Payload $payload):JsonResponse
     {
         $bulk = $payload->get($this->getBulkIdentifier());
         $bulkCount = count($bulk);

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
+use Illuminate\Http\JsonResponse;
+use JDT\Api\Contracts\ModifyFactory;
 use JDT\Api\Payload;
-use Dingo\Api\Http\Response;
-use Dingo\Api\Routing\Helpers;
 use JDT\Api\Contracts\ApiEndpoint;
 use Illuminate\Validation\Validator;
 use JDT\Api\Contracts\ModifyPayload;
@@ -20,7 +20,7 @@ use JDT\Api\Contracts\ModifyPayloadPostValidation;
 
 trait MultipleEndpoint
 {
-    use Helpers;
+    use Helper;
 
     protected $apiList = [];
     protected $builtApiList;
@@ -83,11 +83,11 @@ trait MultipleEndpoint
     }
 
     /**
-     * Execute the api endpoint.
+     * Execute the api endpoint
      * @param \JDT\Api\Payload $payload
-     * @return \Dingo\Api\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function execute(Payload $payload):Response
+    public function execute(Payload $payload):JsonResponse
     {
         return \DB::transaction(function () use ($payload) {
             if ($this instanceof ModifyPayload) {
@@ -112,10 +112,22 @@ trait MultipleEndpoint
                         $callback($originalContent, $payload);
                     }
 
-                    $return[$key] = $this->transform($api, $originalContent);
+                    if ($result->getContent() === null) {
+                        $content = [];
+                    } else {
+                        $content = json_decode($result->getContent(), true);
+                    }
+
+                    $return[$key] = $content;
                 }
 
-                $response = $this->response()->array(['data' => $return]);
+                $factory = $this->response()->array($return);
+
+                if ($this instanceof ModifyFactory) {
+                    $this->modifyFactory($factory);
+                }
+
+                $response = $factory->transform();
 
                 if ($this instanceof ModifyResponse) {
                     $this->modifyResponse($response);
