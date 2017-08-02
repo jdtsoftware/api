@@ -11,13 +11,10 @@ class Response
         $response = new Response($content);
         $response->setStatusCode(202);
 
-        if (! is_null($location)) {
+        if (!is_null($location)) {
             $response->header('Location', $location);
         }
 
         return $response;
-
-        fractal(null)
-            ->
     }
 }
