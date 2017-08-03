@@ -20,7 +20,7 @@ use JDT\Api\Contracts\ModifyPayloadPostValidation;
 
 trait MultipleEndpoint
 {
-    use Helper;
+    use Helper, ExceptionHandlerReplacer;
 
     protected $apiList = [];
     protected $builtApiList;
@@ -89,54 +89,56 @@ trait MultipleEndpoint
      */
     public function execute(Payload $payload):JsonResponse
     {
-        return \DB::transaction(function () use ($payload) {
-            if ($this instanceof ModifyPayload) {
-                $payload = $this->modifyPayload($payload);
-            }
-
-            $validation = $this->getValidation($payload);
-
-            if ($validation->passes()) {
-                if ($this instanceof ModifyPayloadPostValidation) {
-                    $payload = $this->modifyPayloadPostValidation($payload);
+        return $this->replaceExceptionHandler(function() use ($payload) {
+            return \DB::transaction(function () use ($payload) {
+                if ($this instanceof ModifyPayload) {
+                    $payload = $this->modifyPayload($payload);
                 }
 
-                $return = [];
-                foreach ($this->buildApiList() as $key => $api) {
-                    $internalPayload = $payload->pluck($key);
-                    $result = $api->execute($internalPayload);
-                    $originalContent = $result->getOriginalContent();
+                $validation = $this->getValidation($payload);
 
-                    if (isset($this->callbackList[$key])) {
-                        $callback = $this->callbackList[$key];
-                        $callback($originalContent, $payload);
+                if ($validation->passes()) {
+                    if ($this instanceof ModifyPayloadPostValidation) {
+                        $payload = $this->modifyPayloadPostValidation($payload);
                     }
 
-                    if ($result->getContent() === null) {
-                        $content = [];
-                    } else {
-                        $content = json_decode($result->getContent(), true);
+                    $return = [];
+                    foreach ($this->buildApiList() as $key => $api) {
+                        $internalPayload = $payload->pluck($key);
+                        $result = $api->execute($internalPayload);
+                        $originalContent = $result->getOriginalContent();
+
+                        if (isset($this->callbackList[$key])) {
+                            $callback = $this->callbackList[$key];
+                            $callback($originalContent, $payload);
+                        }
+
+                        if ($result->getContent() === null) {
+                            $content = [];
+                        } else {
+                            $content = json_decode($result->getContent(), true);
+                        }
+
+                        $return[$key] = $content;
                     }
 
-                    $return[$key] = $content;
+                    $factory = $this->response()->array($return);
+
+                    if ($this instanceof ModifyFactory) {
+                        $this->modifyFactory($factory);
+                    }
+
+                    $response = $factory->transform();
+
+                    if ($this instanceof ModifyResponse) {
+                        $this->modifyResponse($response);
+                    }
+
+                    return $response;
+                } else {
+                    throw new ValidationHttpException($validation);
                 }
-
-                $factory = $this->response()->array($return);
-
-                if ($this instanceof ModifyFactory) {
-                    $this->modifyFactory($factory);
-                }
-
-                $response = $factory->transform();
-
-                if ($this instanceof ModifyResponse) {
-                    $this->modifyResponse($response);
-                }
-
-                return $response;
-            } else {
-                throw new ValidationHttpException($validation);
-            }
+            });
         });
     }
 

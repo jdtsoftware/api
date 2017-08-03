@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace JDT\Api\Exceptions;
 
-use Dingo\Api\Contract\Debug\MessageBagErrors;
+use Illuminate\Support\MessageBag;
 use Illuminate\Validation\ValidationException;
+use JDT\Api\Contracts\MessageBagErrors;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ValidationHttpException extends ValidationException implements MessageBagErrors, HttpExceptionInterface
@@ -31,7 +32,7 @@ class ValidationHttpException extends ValidationException implements MessageBagE
      *
      * @return \Illuminate\Support\MessageBag
      */
-    public function getErrors()
+    public function getErrors():MessageBag
     {
         return $this->validator->errors();
     }
@@ -41,7 +42,7 @@ class ValidationHttpException extends ValidationException implements MessageBagE
      *
      * @return bool
      */
-    public function hasErrors()
+    public function hasErrors():bool
     {
         return !$this->validator->errors()->isEmpty();
     }

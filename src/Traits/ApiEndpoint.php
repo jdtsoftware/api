@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace JDT\Api\Traits;
 
 use App\Modules\User\Entities\User;
+use JDT\Api\Contracts\ExceptionHandler;
 use JDT\Api\Contracts\ModifyFactory;
+use JDT\Api\Exceptions\Handler;
 use JDT\Api\Field\FieldApi;
 use JDT\Api\Payload;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Contracts\Debug\ExceptionHandler as IlluminateExceptionHandler;
 use JDT\Api\Field\FieldList;
 use Illuminate\Validation\Validator;
 use JDT\Api\Contracts\ModifyPayload;
@@ -22,7 +25,7 @@ use Spatie\Fractal\Fractal;
 
 trait ApiEndpoint
 {
-    use Helper;
+    use Helper, ExceptionHandlerReplacer;
 
     /**
      * @var \JDT\Api\Payload
@@ -78,15 +81,17 @@ trait ApiEndpoint
      */
     public function execute(Payload $payload):JsonResponse
     {
-        if (
-            !empty($this->getBulkIdentifier()) &&
-            $payload->has($this->getBulkIdentifier()) &&
-            is_array($payload->get($this->getBulkIdentifier()))
-        ) {
-            return $this->executeBulk($payload);
-        } else {
-            return $this->executeSingle($payload);
-        }
+        return $this->replaceExceptionHandler(function() use ($payload) {
+            if (
+                !empty($this->getBulkIdentifier()) &&
+                $payload->has($this->getBulkIdentifier()) &&
+                is_array($payload->get($this->getBulkIdentifier()))
+            ) {
+                return $this->executeBulk($payload);
+            } else {
+                return $this->executeSingle($payload);
+            }
+        });
     }
 
     /**
@@ -202,7 +207,7 @@ trait ApiEndpoint
             try {
                 $response = $this->executeSingle($bulkPayload)->getOriginalContent();
             } catch (\Exception $ex) {
-                $response = app('Dingo\Api\Exception\Handler')->handle($ex)->getOriginalContent()['data'];
+                $response = app(Handler::class)->handle($ex)->getOriginalContent()['data'];
             }
 
             $return[$key] = $response;

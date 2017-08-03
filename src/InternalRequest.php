@@ -4,6 +4,7 @@ namespace JDT\Api;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -354,15 +355,18 @@ class InternalRequest
         $this->routeStack[] = $this->router->getCurrentRoute();
         $this->clearCachedFacadeInstance();
 
+        $exceptionHandler = $this->container->make(ExceptionHandler::class);
+        $this->container->offsetUnset(ExceptionHandler::class);
+
         try {
             $this->container->instance('request', $request);
             $response = $this->router->dispatch($request);
 
             if (!$response->isSuccessful() && !$response->isRedirection()) {
-                \Log::info($response);
                 throw new InternalHttpException($response);
             }
         } finally {
+            $this->container->instance(ExceptionHandler::class, $exceptionHandler);
             $this->refreshRequestStack();
         }
 
