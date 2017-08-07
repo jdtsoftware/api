@@ -189,7 +189,7 @@ class Factory
     {
         return (new static())
             ->data($collection)
-            ->transformer(function(array $data) {
+            ->transformer(function (array $data) {
                 return $data;
             });
     }
@@ -301,8 +301,7 @@ class Factory
      */
     protected function blankTrandformer():\Closure
     {
-        return function() {
-
+        return function () {
         };
     }
 }

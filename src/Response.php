@@ -8,7 +8,7 @@ class Response
 {
     public static function accepted($location = null, $content = null)
     {
-        $response = new Response($content);
+        $response = new self($content);
         $response->setStatusCode(202);
 
         if (!is_null($location)) {

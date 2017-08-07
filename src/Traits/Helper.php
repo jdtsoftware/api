@@ -2,13 +2,9 @@
 
 namespace JDT\Api\Traits;
 
-use Illuminate\Auth\AuthManager;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Collection;
 use JDT\Api\InternalRequest;
 use JDT\Api\Response\Factory;
-use Spatie\Fractal\Fractal;
-use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Auth\AuthManager;
 
 trait Helper
 {

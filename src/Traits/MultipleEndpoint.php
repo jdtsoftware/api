@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
-use Illuminate\Http\JsonResponse;
-use JDT\Api\Contracts\ModifyFactory;
 use JDT\Api\Payload;
+use Illuminate\Http\JsonResponse;
 use JDT\Api\Contracts\ApiEndpoint;
 use Illuminate\Validation\Validator;
+use JDT\Api\Contracts\ModifyFactory;
 use JDT\Api\Contracts\ModifyPayload;
 use JDT\Api\Contracts\ModifyResponse;
 use Illuminate\Database\Eloquent\Model;
@@ -83,13 +83,13 @@ trait MultipleEndpoint
     }
 
     /**
-     * Execute the api endpoint
+     * Execute the api endpoint.
      * @param \JDT\Api\Payload $payload
      * @return \Illuminate\Http\JsonResponse
      */
     public function execute(Payload $payload):JsonResponse
     {
-        return $this->replaceExceptionHandler(function() use ($payload) {
+        return $this->replaceExceptionHandler(function () use ($payload) {
             return \DB::transaction(function () use ($payload) {
                 if ($this instanceof ModifyPayload) {
                     $payload = $this->modifyPayload($payload);

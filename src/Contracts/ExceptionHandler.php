@@ -3,8 +3,8 @@
 namespace JDT\Api\Contracts;
 
 use Exception;
-use Illuminate\Contracts\Debug\ExceptionHandler as IlluminateExceptionHandler;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Contracts\Debug\ExceptionHandler as IlluminateExceptionHandler;
 
 interface ExceptionHandler extends IlluminateExceptionHandler
 {

@@ -2,25 +2,25 @@
 
 namespace JDT\Api;
 
-use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Container\Container;
-use Illuminate\Contracts\Debug\ExceptionHandler;
-use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Router;
-use Illuminate\Support\Facades\Request as RequestFacade;
-use JDT\Api\Exceptions\InternalHttpException;
-use JDT\Api\Http\InternalApiRequest;
-use Laravel\Passport\ApiTokenCookieFactory;
 use Laravel\Passport\Passport;
+use Illuminate\Http\UploadedFile;
+use JDT\Api\Http\InternalApiRequest;
+use Illuminate\Filesystem\Filesystem;
+use Laravel\Passport\ApiTokenCookieFactory;
 use Symfony\Component\HttpFoundation\Cookie;
+use Illuminate\Contracts\Container\Container;
+use JDT\Api\Exceptions\InternalHttpException;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Support\Facades\Request as RequestFacade;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class InternalRequest
 {
     /**
-     * Setup Params
+     * Setup Params.
      */
     protected $container;
     protected $cookieFactory;
@@ -29,7 +29,7 @@ class InternalRequest
     protected $routeStack;
 
     /**
-     * Request Params
+     * Request Params.
      */
     protected $attach;
     protected $be;
@@ -39,7 +39,6 @@ class InternalRequest
     protected $on;
     protected $once = false;
     protected $with;
-
 
     /**
      * InternalRequest constructor.
@@ -305,7 +304,7 @@ class InternalRequest
         // absolute URI, in this case we'll prefix the root requests path to the URI.
         $rootUrl = $this->getRootRequest()->root();
         if ((!parse_url($uri, PHP_URL_SCHEME)) && parse_url($rootUrl) !== false) {
-            $uri = rtrim($rootUrl, '/').'/'.ltrim($uri, '/');
+            $uri = rtrim($rootUrl, '/') . '/' . ltrim($uri, '/');
         }
 
         if ($this->be !== null) {
