@@ -409,7 +409,7 @@ trait ApiEndpoint
     protected function buildOffset(Builder $query):Builder
     {
         $page = $this->payload->get('page.number', 1);
-        $size = $this->payload->get('page.size', $this->defaultPageSize);
+        $size = $this->payload->get('page.size', $this->getDefaultPageSize());
         $offset = ($page * $size) - $size;
 
         $query->skip($offset)->take($size);

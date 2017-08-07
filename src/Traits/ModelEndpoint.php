@@ -132,20 +132,17 @@ trait ModelEndpoint
         $this->buildSort($query);
         $this->modifyQuery($query);
 
-        $page = $payload->get('page.number', 1);
-        $size = $payload->get('page.size', $this->getDefaultPageSize());
-
         if (defined('static::PAGINATION') && static::PAGINATION === false) {
             return $this->response()->collection($query->get(), $this->getTransformer());
         } else {
             $page = $payload->get('page.number', 1);
-            $size = $payload->get('page.size', 1);
+            $size = $payload->get('page.size', $this->getDefaultPageSize());
 
             $result = $query->paginate($size, $payload->get('fields', ['*']), 'page[number]', $page)
                 ->appends([
                     'filter' => $payload->get('filter'),
                     'page' => [
-                        'size' => $payload->get('page.size'),
+                        'size' => $size,
                     ],
                     'sort' => $payload->get('sort'),
                     'fields' => $payload->get('fields'),
