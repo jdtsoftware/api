@@ -2,9 +2,9 @@
 
 namespace JDT\Api\Traits;
 
-use Illuminate\Contracts\Debug\ExceptionHandler as IlluminateExceptionHandler;
-use JDT\Api\Contracts\ExceptionHandler;
 use JDT\Api\Http\InternalApiRequest;
+use JDT\Api\Contracts\ExceptionHandler;
+use Illuminate\Contracts\Debug\ExceptionHandler as IlluminateExceptionHandler;
 
 trait ExceptionHandlerReplacer
 {
@@ -22,6 +22,7 @@ trait ExceptionHandlerReplacer
             return call_user_func($callable);
         } catch (\Exception $ex) {
             $exceptionHandler->report($ex);
+
             return $exceptionHandler->render(null, $ex);
         } finally {
             app()->instance(IlluminateExceptionHandler::class, $laravelExceptionHandler);

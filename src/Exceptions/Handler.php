@@ -3,13 +3,13 @@
 namespace JDT\Api\Exceptions;
 
 use Exception;
-use Illuminate\Contracts\Debug\ExceptionHandler as IlluminateExceptionHandler;
+use ReflectionFunction;
 use Illuminate\Http\JsonResponse;
 use JDT\Api\Contracts\ExceptionHandler;
 use JDT\Api\Contracts\MessageBagErrors;
-use ReflectionFunction;
 use Symfony\Component\HttpFoundation\Response as BaseResponse;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Illuminate\Contracts\Debug\ExceptionHandler as IlluminateExceptionHandler;
 
 class Handler implements ExceptionHandler
 {
@@ -263,7 +263,7 @@ class Handler implements ExceptionHandler
 
         return array_filter($input, function ($value) {
             if (is_string($value)) {
-                return ! starts_with($value, ':');
+                return !starts_with($value, ':');
             }
 
             return true;

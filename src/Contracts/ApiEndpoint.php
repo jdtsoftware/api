@@ -6,7 +6,6 @@ namespace JDT\Api\Contracts;
 
 use JDT\Api\Payload;
 use Illuminate\Http\JsonResponse;
-use Spatie\Fractal\Fractal;
 
 interface ApiEndpoint
 {
@@ -31,7 +30,7 @@ interface ApiEndpoint
     public function buildRules(Payload $payload):array;
 
     /**
-     * Execute the api endpoint
+     * Execute the api endpoint.
      * @param \JDT\Api\Payload $payload
      * @return \Illuminate\Http\JsonResponse
      */

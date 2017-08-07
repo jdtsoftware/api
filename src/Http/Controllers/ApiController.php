@@ -3,8 +3,8 @@
 namespace JDT\Api\Http\Controllers;
 
 use JDT\Api\Payload;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use JDT\Api\Contracts\ApiEndpoint;
 use Illuminate\Routing\Controller as BaseController;
 

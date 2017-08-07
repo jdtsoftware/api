@@ -4,24 +4,20 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
-use App\Modules\User\Entities\User;
-use JDT\Api\Contracts\ExceptionHandler;
-use JDT\Api\Contracts\ModifyFactory;
-use JDT\Api\Exceptions\Handler;
-use JDT\Api\Field\FieldApi;
 use JDT\Api\Payload;
 use Illuminate\Support\Str;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Contracts\Debug\ExceptionHandler as IlluminateExceptionHandler;
+use JDT\Api\Field\FieldApi;
 use JDT\Api\Field\FieldList;
+use JDT\Api\Response\Factory;
+use JDT\Api\Exceptions\Handler;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Validator;
+use JDT\Api\Contracts\ModifyFactory;
 use JDT\Api\Contracts\ModifyPayload;
 use JDT\Api\Contracts\ModifyResponse;
 use Illuminate\Database\Eloquent\Builder;
 use JDT\Api\Exceptions\ValidationHttpException;
 use JDT\Api\Contracts\ModifyPayloadPostValidation;
-use JDT\Api\Response\Factory;
-use Spatie\Fractal\Fractal;
 
 trait ApiEndpoint
 {
@@ -60,7 +56,7 @@ trait ApiEndpoint
     abstract protected function getFields(Payload $payload):FieldList;
 
     /**
-     * Run the endpoint code
+     * Run the endpoint code.
      * @return \JDT\Api\Response\Factory
      */
     abstract protected function run():Factory;
@@ -75,13 +71,13 @@ trait ApiEndpoint
     }
 
     /**
-     * Execute the api endpoint
+     * Execute the api endpoint.
      * @param \JDT\Api\Payload $payload
      * @return \Illuminate\Http\JsonResponse
      */
     public function execute(Payload $payload):JsonResponse
     {
-        return $this->replaceExceptionHandler(function() use ($payload) {
+        return $this->replaceExceptionHandler(function () use ($payload) {
             if (
                 !empty($this->getBulkIdentifier()) &&
                 $payload->has($this->getBulkIdentifier()) &&
@@ -96,7 +92,7 @@ trait ApiEndpoint
 
     /**
      * @param \JDT\Api\Payload $payload
-     * @param boolean $ignoreApiFields
+     * @param bool $ignoreApiFields
      * @return array
      */
     public function buildRules(Payload $payload, $ignoreApiFields = false):array
@@ -142,7 +138,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Execute a single endpoint
+     * Execute a single endpoint.
      * @param \JDT\Api\Payload $payload
      * @return \Illuminate\Http\JsonResponse
      * @throws \JDT\Api\Exceptions\ValidationHttpException
@@ -187,7 +183,7 @@ trait ApiEndpoint
     }
 
     /**
-     * Execute a bulk api endpoint
+     * Execute a bulk api endpoint.
      * @param \JDT\Api\Payload $payload
      * @return \Illuminate\Http\JsonResponse
      */
@@ -259,7 +255,7 @@ trait ApiEndpoint
     /**
      * Get the built field list.
      * @param \JDT\Api\Payload $payload
-     * @param boolean $ignoreApiFields
+     * @param bool $ignoreApiFields
      * @return \JDT\Api\Field\FieldList
      */
     protected function getBuiltFieldList(Payload $payload, $ignoreApiFields = false):FieldList
@@ -268,11 +264,11 @@ trait ApiEndpoint
             $this->fields = $this->getFields($payload);
         }
 
-        if($ignoreApiFields) {
+        if ($ignoreApiFields) {
             $fields = new FieldList(
                 array_filter(
                     $this->fields->getFields(),
-                    function($field) {
+                    function ($field) {
                         return ($field instanceof FieldApi) === false;
                     }
                 )

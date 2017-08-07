@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
-use Illuminate\Database\Eloquent\Builder;
 use JDT\Api\Payload;
+use JDT\Api\Response\Factory;
 use JDT\Api\Contracts\ApiEndpoint;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use JDT\Api\Contracts\TransformerAwareModel;
-use JDT\Api\Response\Factory;
 use JDT\Api\Transformers\AbstractTransformer;
 use JDT\Api\Transformers\DefaultModelTransformer;
-use Spatie\Fractal\Fractal;
 
 trait ModelEndpoint
 {
@@ -45,7 +44,7 @@ trait ModelEndpoint
     }
 
     /**
-     * Triggered before returning the model data set
+     * Triggered before returning the model data set.
      *
      * @param Builder $query
      * @return Builder
@@ -65,7 +64,7 @@ trait ModelEndpoint
     }
 
     /**
-     * Run the endpoint code
+     * Run the endpoint code.
      * @return \JDT\Api\Response\Factory
      */
     protected function run():Factory

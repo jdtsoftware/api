@@ -2,10 +2,10 @@
 
 namespace JDT\Api\Providers;
 
-use Illuminate\Contracts\Debug\ExceptionHandler as IlluminateExceptionHandler;
+use JDT\Api\Exceptions\Handler;
 use Illuminate\Support\ServiceProvider;
 use JDT\Api\Contracts\ExceptionHandler;
-use JDT\Api\Exceptions\Handler;
+use Illuminate\Contracts\Debug\ExceptionHandler as IlluminateExceptionHandler;
 
 class ApiServiceProvider extends ServiceProvider
 {

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace JDT\Api\Exceptions;
 
 use Illuminate\Support\MessageBag;
-use Illuminate\Validation\ValidationException;
 use JDT\Api\Contracts\MessageBagErrors;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ValidationHttpException extends ValidationException implements MessageBagErrors, HttpExceptionInterface
