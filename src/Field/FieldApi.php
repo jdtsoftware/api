@@ -11,5 +11,4 @@ namespace JDT\Api\Field;
  */
 class FieldApi extends Field
 {
-
 }

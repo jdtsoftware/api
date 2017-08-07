@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace JDT\Api\Traits;
 
-use Illuminate\Database\Eloquent\Builder;
 use JDT\Api\Payload;
-use Dingo\Api\Http\Response;
+use JDT\Api\Response\Factory;
 use JDT\Api\Contracts\ApiEndpoint;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use JDT\Api\Contracts\TransformerAwareModel;
 use JDT\Api\Transformers\AbstractTransformer;
 use JDT\Api\Transformers\DefaultModelTransformer;
@@ -44,7 +44,7 @@ trait ModelEndpoint
     }
 
     /**
-     * Triggered before returning the model data set
+     * Triggered before returning the model data set.
      *
      * @param Builder $query
      * @return Builder
@@ -65,9 +65,9 @@ trait ModelEndpoint
 
     /**
      * Run the endpoint code.
-     * @return \Dingo\Api\Http\Response
+     * @return \JDT\Api\Response\Factory
      */
-    protected function run():Response
+    protected function run():Factory
     {
         switch ($this->getRunType()) {
             case ApiEndpoint::TYPE_READ_ALL:
@@ -118,9 +118,9 @@ trait ModelEndpoint
     }
 
     /**
-     * @return \Dingo\Api\Http\Response
+     * @return \JDT\Api\Response\Factory
      */
-    protected function modelReadAll():Response
+    protected function modelReadAll():Factory
     {
         $model = $this->getModel();
         $payload = $this->getPayload();
@@ -139,7 +139,7 @@ trait ModelEndpoint
             return $this->response()->collection($query->get(), $this->getTransformer());
         } else {
             $page = $payload->get('page.number', 1);
-            $size = $payload->get('page.size', $this->getDefaultPageSize());
+            $size = $payload->get('page.size', 1);
 
             $result = $query->paginate($size, $payload->get('fields', ['*']), 'page[number]', $page)
                 ->appends([
@@ -151,14 +151,14 @@ trait ModelEndpoint
                     'fields' => $payload->get('fields'),
                 ]);
 
-            return $this->response()->paginator($result, $this->getTransformer());
+            return $this->response()->collection($result, $this->getTransformer());
         }
     }
 
     /**
-     * @return \Dingo\Api\Http\Response
+     * @return \JDT\Api\Response\Factory
      */
-    protected function modelRead():Response
+    protected function modelRead():Factory
     {
         $model = $this->getModel();
 
@@ -172,9 +172,9 @@ trait ModelEndpoint
     }
 
     /**
-     * @return \Dingo\Api\Http\Response
+     * @return \JDT\Api\Response\Factory
      */
-    protected function modelCreate():Response
+    protected function modelCreate():Factory
     {
         $model = $this->getModel();
 
@@ -188,9 +188,9 @@ trait ModelEndpoint
     }
 
     /**
-     * @return \Dingo\Api\Http\Response
+     * @return \JDT\Api\Response\Factory
      */
-    protected function modelUpdate():Response
+    protected function modelUpdate():Factory
     {
         $model = $this->getModel();
 
@@ -207,9 +207,9 @@ trait ModelEndpoint
     }
 
     /**
-     * @return \Dingo\Api\Http\Response
+     * @return \JDT\Api\Response\Factory
      */
-    protected function modelDelete():Response
+    protected function modelDelete():Factory
     {
         $model = $this->getModel();
 
@@ -236,9 +236,9 @@ trait ModelEndpoint
      * @param \Illuminate\Database\Eloquent\Model $model
      * @param callable $callable
      * @param bool $identifierCheck
-     * @return \Dingo\Api\Http\Response
+     * @return \JDT\Api\Response\Factory
      */
-    protected function actionRequest(Model &$model, callable $callable, bool $identifierCheck = false):Response
+    protected function actionRequest(Model &$model, callable $callable, bool $identifierCheck = false):Factory
     {
         if ($identifierCheck === true) {
             $this->checkIdentifierAndPayload($model);
@@ -249,6 +249,7 @@ trait ModelEndpoint
 
             if ($model !== null) {
                 $model = $this->postEventAction($model);
+
                 return $this->response()->item($model, $this->getTransformer());
             } else {
                 return $this->response()->noContent();

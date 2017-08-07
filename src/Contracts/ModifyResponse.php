@@ -2,13 +2,13 @@
 
 namespace JDT\Api\Contracts;
 
-use Dingo\Api\Http\Response;
+use Illuminate\Http\JsonResponse;
 
 interface ModifyResponse
 {
     /**
-     * @param \Dingo\Api\Http\Response $response
+     * @param \Illuminate\Http\JsonResponse $response
      * @return mixed
      */
-    public function modifyResponse(Response $response);
+    public function modifyResponse(JsonResponse $response);
 }

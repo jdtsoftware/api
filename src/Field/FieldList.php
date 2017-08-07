@@ -21,7 +21,7 @@ class FieldList
      */
     public function __construct(array $fields = [])
     {
-        foreach($fields as $field) {
+        foreach ($fields as $field) {
             $this->addField($field);
         }
     }

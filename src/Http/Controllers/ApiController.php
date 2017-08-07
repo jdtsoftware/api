@@ -3,8 +3,8 @@
 namespace JDT\Api\Http\Controllers;
 
 use JDT\Api\Payload;
-use Dingo\Api\Http\Response;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use JDT\Api\Contracts\ApiEndpoint;
 use Illuminate\Routing\Controller as BaseController;
 
@@ -12,10 +12,10 @@ class ApiController extends BaseController
 {
     /**
      * @param \Illuminate\Http\Request $request
-     * @return \Dingo\Api\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      * @throws \Exception
      */
-    public function actionExecute(Request $request):Response
+    public function actionExecute(Request $request):JsonResponse
     {
         $action = $request->route()->getAction();
 

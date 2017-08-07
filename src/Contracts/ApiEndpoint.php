@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace JDT\Api\Contracts;
 
 use JDT\Api\Payload;
-use Dingo\Api\Http\Response;
+use Illuminate\Http\JsonResponse;
 
 interface ApiEndpoint
 {
@@ -32,7 +32,7 @@ interface ApiEndpoint
     /**
      * Execute the api endpoint.
      * @param \JDT\Api\Payload $payload
-     * @return \Dingo\Api\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function execute(Payload $payload):Response;
+    public function execute(Payload $payload):JsonResponse;
 }

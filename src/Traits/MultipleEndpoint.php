@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace JDT\Api\Traits;
 
 use JDT\Api\Payload;
-use Dingo\Api\Http\Response;
-use Dingo\Api\Routing\Helpers;
+use Illuminate\Http\JsonResponse;
 use JDT\Api\Contracts\ApiEndpoint;
 use Illuminate\Validation\Validator;
+use JDT\Api\Contracts\ModifyFactory;
 use JDT\Api\Contracts\ModifyPayload;
 use JDT\Api\Contracts\ModifyResponse;
 use Illuminate\Database\Eloquent\Model;
@@ -20,7 +20,7 @@ use JDT\Api\Contracts\ModifyPayloadPostValidation;
 
 trait MultipleEndpoint
 {
-    use Helpers;
+    use Helper, ExceptionHandlerReplacer;
 
     protected $apiList = [];
     protected $builtApiList;
@@ -85,46 +85,60 @@ trait MultipleEndpoint
     /**
      * Execute the api endpoint.
      * @param \JDT\Api\Payload $payload
-     * @return \Dingo\Api\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function execute(Payload $payload):Response
+    public function execute(Payload $payload):JsonResponse
     {
-        return \DB::transaction(function () use ($payload) {
-            if ($this instanceof ModifyPayload) {
-                $payload = $this->modifyPayload($payload);
-            }
-
-            $validation = $this->getValidation($payload);
-
-            if ($validation->passes()) {
-                if ($this instanceof ModifyPayloadPostValidation) {
-                    $payload = $this->modifyPayloadPostValidation($payload);
+        return $this->replaceExceptionHandler(function () use ($payload) {
+            return \DB::transaction(function () use ($payload) {
+                if ($this instanceof ModifyPayload) {
+                    $payload = $this->modifyPayload($payload);
                 }
 
-                $return = [];
-                foreach ($this->buildApiList() as $key => $api) {
-                    $internalPayload = $payload->pluck($key);
-                    $result = $api->execute($internalPayload);
-                    $originalContent = $result->getOriginalContent();
+                $validation = $this->getValidation($payload);
 
-                    if (isset($this->callbackList[$key])) {
-                        $callback = $this->callbackList[$key];
-                        $callback($originalContent, $payload);
+                if ($validation->passes()) {
+                    if ($this instanceof ModifyPayloadPostValidation) {
+                        $payload = $this->modifyPayloadPostValidation($payload);
                     }
 
-                    $return[$key] = $this->transform($api, $originalContent);
+                    $return = [];
+                    foreach ($this->buildApiList() as $key => $api) {
+                        $internalPayload = $payload->pluck($key);
+                        $result = $api->execute($internalPayload);
+                        $originalContent = $result->getOriginalContent();
+
+                        if (isset($this->callbackList[$key])) {
+                            $callback = $this->callbackList[$key];
+                            $callback($originalContent, $payload);
+                        }
+
+                        if ($result->getContent() === null) {
+                            $content = [];
+                        } else {
+                            $content = json_decode($result->getContent(), true);
+                        }
+
+                        $return[$key] = $content;
+                    }
+
+                    $factory = $this->response()->array($return);
+
+                    if ($this instanceof ModifyFactory) {
+                        $this->modifyFactory($factory);
+                    }
+
+                    $response = $factory->transform();
+
+                    if ($this instanceof ModifyResponse) {
+                        $this->modifyResponse($response);
+                    }
+
+                    return $response;
+                } else {
+                    throw new ValidationHttpException($validation);
                 }
-
-                $response = $this->response()->array(['data' => $return]);
-
-                if ($this instanceof ModifyResponse) {
-                    $this->modifyResponse($response);
-                }
-
-                return $response;
-            } else {
-                throw new ValidationHttpException($validation);
-            }
+            });
         });
     }
 
