@@ -102,7 +102,7 @@ trait MultipleEndpoint
                         $payload = $this->modifyPayloadPostValidation($payload);
                     }
 
-                    $return = [];
+                    $return = new \stdClass();
                     foreach ($this->buildApiList() as $key => $api) {
                         $internalPayload = $payload->pluck($key);
                         $result = $api->execute($internalPayload);
@@ -119,10 +119,12 @@ trait MultipleEndpoint
                             $content = json_decode($result->getContent(), true);
                         }
 
-                        $return[$key] = $content;
+                        $return->{$key} = $content['data'];
                     }
 
-                    $factory = $this->response()->array($return);
+                    $factory = $this->response()->item($return, function($data) {
+                        return (array) $data;
+                    });
 
                     if ($this instanceof ModifyFactory) {
                         $this->modifyFactory($factory);
