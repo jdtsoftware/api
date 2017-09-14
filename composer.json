@@ -32,6 +32,6 @@
         "illuminate/routing": "^5.2",
         "illuminate/validation": "^5.2",
         "nesbot/carbon": "^1.22",
-        "spatie/laravel-fractal": "^4.2"
+        "spatie/laravel-fractal": "^5.1"
     }
 }
