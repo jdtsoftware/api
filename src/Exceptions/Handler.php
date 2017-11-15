@@ -3,6 +3,7 @@
 namespace JDT\Api\Exceptions;
 
 use Exception;
+use Symfony\Component\HttpFoundation\Response;
 use ReflectionFunction;
 use Illuminate\Http\JsonResponse;
 use JDT\Api\Contracts\ExceptionHandler;
