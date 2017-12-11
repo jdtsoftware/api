@@ -13,6 +13,7 @@ class FieldList
     protected $payloadValidation = [];
     protected $sort = [];
     protected $filters = [];
+    protected $shorthandFilters = [];
 
     /**
      * FieldList constructor.
@@ -42,9 +43,12 @@ class FieldList
         }
 
         if ($field->canFilter() === true) {
-            $filterValueValidation = $field->getFilterValueValidation();
+            $filterShorthandKey = $field->getFilterShorthandKey();
+            if (!empty($filterShorthandKey)) {
+                $this->shorthandFilters[$filterShorthandKey] = $field->getField();
+            }
 
-            $this->filters[$field->getField()] = (strlen($filterValueValidation) > 0) ? $filterValueValidation : true;
+            $this->filters[$field->getField()] = true;
         }
 
         if ($field->canSort() === true) {
@@ -115,6 +119,15 @@ class FieldList
     public function getFilters():array
     {
         return $this->filters;
+    }
+
+    /**
+     * Get shorthand filters.
+     * @return array
+     */
+    public function getShorthandFilters():array
+    {
+        return $this->shorthandFilters;
     }
 
     /**

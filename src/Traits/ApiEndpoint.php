@@ -113,7 +113,7 @@ trait ApiEndpoint
         if ($this->getBuiltFieldList($payload)->hasFilters()) {
             $rules = array_merge($rules, [
                 'filter.*.field' => 'required|in:' . implode(',', $this->getBuiltFieldList($payload, $ignoreApiFields)->getFilterKeys()),
-                'filter.*.type' => 'in:eq,neq,lt,lte,gt,gte,like,between,not_between,is_null,is_not_null,in,not_in',
+                'filter.*.type' => 'in:eq,neq,lt,lte,gt,gte,like,between,not_between,is_null,is_not_null,in,not_in,not_like',
                 'filter.*.value' => 'required_unless:filter.*.type,in,not_in,is_null,is_not_null,between',
                 'filter.*.values' => 'required_if:filter.*.type,in,not_in|array',
                 'filter.*.from' => 'required_if:filter.*.type,between,not_between',
@@ -150,6 +150,8 @@ trait ApiEndpoint
         if ($this instanceof ModifyPayload) {
             $payload = $this->modifyPayload($payload);
         }
+
+        $payload = $this->convertShorthandFilters($payload);
 
         $validation = $this->getValidation($payload);
 
@@ -330,6 +332,11 @@ trait ApiEndpoint
                         $query->where($filter['field'], 'like', $value);
                         break;
 
+                    case 'not_like':
+                        $value = Str::contains($filter['value'], '%') ? $filter['value'] : '%' . $filter['value'] . '%';
+                        $query->where($filter['field'], 'not like', $value);
+                        break;
+
                     case 'is_null':
                         $query->whereNull($filter['field']);
                         break;
@@ -415,5 +422,154 @@ trait ApiEndpoint
         $query->skip($offset)->take($size);
 
         return $query;
+    }
+
+    /**
+     * @param Payload $payload
+     * @return Payload
+     */
+    protected function convertShorthandFilters(Payload $payload):Payload
+    {
+        $shorthandFilters = $this->getBuiltFieldList($payload)->getShorthandFilters();
+        $filterKeys = array_intersect(array_keys($shorthandFilters), array_keys($payload->getPayload()));
+        $filters = $payload->get('filter', []);
+
+        $operators = [
+            [
+                'start' => '>!',
+                'type' => 'gte',
+            ],
+            [
+                'start' => '<!',
+                'type' => 'lte',
+            ],
+            [
+                'start' => '![',
+                'end' => ']',
+                'type' => 'not_in',
+                'delimiter' => ',',
+            ],
+            [
+                'start' => '!{',
+                'end' => '}',
+                'type' => 'not_between',
+                'delimiter' => ',',
+                'count' => 2,
+            ],
+            [
+                'start' => '!%',
+                'type' => 'not_like',
+            ],
+            [
+                'start' => '!NULL',
+                'type' => 'is_not_null',
+            ],
+            [
+                'start' => '!',
+                'type' => 'neq',
+            ],
+            [
+                'start' => '>',
+                'type' => 'ge',
+            ],
+            [
+                'start' => '<',
+                'type' => 'lt',
+            ],
+            [
+                'start' => '[',
+                'end' => ']',
+                'type' => 'in',
+                'delimiter' => ',',
+            ],
+            [
+                'start' => '{',
+                'end' => '}',
+                'type' => 'between',
+                'delimiter' => ',',
+                'count' => 2,
+            ],
+            [
+                'start' => '%',
+                'type' => 'like',
+            ],
+            [
+                'start' => 'NULL',
+                'type' => 'is_null',
+            ],
+            [
+                'start' => '',
+                'type' => 'eq',
+            ],
+        ];
+
+        foreach ($filterKeys as $key) {
+            foreach ($operators as $operator) {
+                if ($value = $this->checkShorthand($payload->get($key), $operator)) {
+                    $innerFilter = [
+                        'field' => $shorthandFilters[$key],
+                        'type' => $operator['type'],
+                    ];
+
+                    switch ($operator['type']) {
+                        case 'in':
+                        case 'not_in':
+                            $delimiter = $operator['delimiter'] ?? ',';
+                            $count = $operator['count'] ?? PHP_INT_MAX;
+                            $params = explode($delimiter, $value, $count);
+
+                            $innerFilter['values'] = $params;
+                            break;
+
+                        case 'between':
+                        case 'not_between':
+                            $delimiter = $operator['delimiter'] ?? ',';
+                            $count = $operator['count'] ?? PHP_INT_MAX;
+                            $params = explode($delimiter, $value, $count);
+
+                            $innerFilter['from'] = $params[0];
+                            $innerFilter['to'] = $params[1];
+                            break;
+
+                        case 'is_null':
+                        case 'is_not_null':
+                            break; // do nothing
+
+                        default:
+                            $innerFilter['value'] = $value;
+                    }
+
+                    $filters[] = $innerFilter;
+                    break;
+                }
+            }
+        }
+
+        if (!empty($filters)) {
+            $payload->set('filter', $filters);
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @param string $value
+     * @param string $operator
+     * @return null|string
+     */
+    protected function checkShorthand($value, array $operator)
+    {
+        $start = $operator['start'];
+        $end = $operator['end'] ?? '';
+
+        if (
+            is_scalar($value)
+            && (Str::startsWith($value, $start) || empty($start))
+            && (Str::endsWith($value, $end) || empty($end))
+        ) {
+            return Str::replaceLast($end, '', Str::replaceFirst($start, '', $value));
+        }
+
+        return null;
     }
 }

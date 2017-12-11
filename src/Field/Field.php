@@ -13,7 +13,7 @@ class Field
     protected $payloadValidation;
     protected $filter;
     protected $sort;
-    protected $filterValueValidation;
+    protected $filterShorthandKey;
 
     /**
      * Field constructor.
@@ -21,20 +21,20 @@ class Field
      * @param string|array|null $payloadValidation
      * @param bool $filter
      * @param bool $sort
-     * @param string|null $filterValueValidation
+     * @param string|null $filterShorthandKey
      */
     public function __construct(
         string $field,
         $payloadValidation = '',
         bool $filter = false,
         bool $sort = false,
-        string $filterValueValidation = ''
+        string $filterShorthandKey = ''
     ) {
         $this->field = $field;
         $this->payloadValidation = $payloadValidation;
         $this->filter = $filter;
         $this->sort = $sort;
-        $this->filterValueValidation = $filterValueValidation;
+        $this->filterShorthandKey = $filterShorthandKey;
     }
 
     /**
@@ -64,9 +64,9 @@ class Field
     /**
      * @return null|string
      */
-    public function getFilterValueValidation():string
+    public function getFilterShorthandKey():string
     {
-        return $this->filterValueValidation;
+        return $this->filterShorthandKey;
     }
 
     /**
